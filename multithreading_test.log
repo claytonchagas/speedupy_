@@ -1,0 +1,10 @@
+17:24:05,663 root INFO GIL enbaled: True
+17:24:05,663 root INFO Time taken in seconds -' 18.633421399863437
+17:24:05,663 root INFO ########################################
+17:26:48,556 root INFO GIL enbaled: False
+17:26:48,556 root INFO Time taken in seconds -' 17.998373199952766
+17:26:48,556 root INFO ########################################
+17:30:42,288 root INFO multiprocessing test
+17:30:42,289 root INFO GIL enbaled: True
+17:30:42,289 root INFO Time taken in seconds - 10.879718200070783
+17:30:42,289 root INFO ########################################
