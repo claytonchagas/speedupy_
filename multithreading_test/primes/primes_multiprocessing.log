@@ -1,0 +1,25 @@
+17:10:02,819 root INFO GIL enabled: True
+17:10:02,820 root INFO num_procs: 4
+17:10:02,820 root INFO function: count_primes_multiprocessing / input = 10000000 / result = 664579
+17:10:02,820 root INFO time = 33.68487859982997179031 seconds
+17:10:02,820 root INFO #######################################
+17:10:36,884 root INFO GIL enabled: True
+17:10:36,884 root INFO num_procs: 4
+17:10:36,884 root INFO function: count_primes_multiprocessing / input = 10000000 / result = 664579
+17:10:36,884 root INFO time = 33.68724630004726350307 seconds
+17:10:36,884 root INFO #######################################
+17:11:10,520 root INFO GIL enabled: True
+17:11:10,520 root INFO num_procs: 4
+17:11:10,520 root INFO function: count_primes_multiprocessing / input = 10000000 / result = 664579
+17:11:10,521 root INFO time = 33.23424300015904009342 seconds
+17:11:10,521 root INFO #######################################
+17:11:43,861 root INFO GIL enabled: True
+17:11:43,862 root INFO num_procs: 4
+17:11:43,862 root INFO function: count_primes_multiprocessing / input = 10000000 / result = 664579
+17:11:43,862 root INFO time = 32.91627170005813241005 seconds
+17:11:43,862 root INFO #######################################
+17:12:19,60 root INFO GIL enabled: True
+17:12:19,61 root INFO num_procs: 4
+17:12:19,61 root INFO function: count_primes_multiprocessing / input = 10000000 / result = 664579
+17:12:19,61 root INFO time = 34.77888919995166361332 seconds
+17:12:19,61 root INFO #######################################

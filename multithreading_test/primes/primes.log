@@ -1,0 +1,25 @@
+17:02:03,381 root INFO GIL enabled: True
+17:02:03,382 root INFO num_threads: 1
+17:02:03,382 root INFO function: count_primes / input = 10000000 / result = 664579
+17:02:03,382 root INFO time = 54.18975530005991458893 seconds
+17:02:03,382 root INFO #######################################
+17:02:58,931 root INFO GIL enabled: True
+17:02:58,931 root INFO num_threads: 1
+17:02:58,931 root INFO function: count_primes / input = 10000000 / result = 664579
+17:02:58,931 root INFO time = 55.43428050004877150059 seconds
+17:02:58,931 root INFO #######################################
+17:03:55,538 root INFO GIL enabled: True
+17:03:55,538 root INFO num_threads: 1
+17:03:55,538 root INFO function: count_primes / input = 10000000 / result = 664579
+17:03:55,539 root INFO time = 56.49601170001551508904 seconds
+17:03:55,540 root INFO #######################################
+17:04:51,799 root INFO GIL enabled: True
+17:04:51,799 root INFO num_threads: 1
+17:04:51,799 root INFO function: count_primes / input = 10000000 / result = 664579
+17:04:51,799 root INFO time = 56.14113230002112686634 seconds
+17:04:51,799 root INFO #######################################
+17:05:47,308 root INFO GIL enabled: True
+17:05:47,308 root INFO num_threads: 1
+17:05:47,308 root INFO function: count_primes / input = 10000000 / result = 664579
+17:05:47,308 root INFO time = 55.39172190008684992790 seconds
+17:05:47,309 root INFO #######################################

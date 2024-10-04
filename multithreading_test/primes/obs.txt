@@ -1,0 +1,6 @@
+Os resultados diferentes dos tempos do scripts "primes.sh" e "primes2.sh"
+
+no script "primes.sh", executo os 3 programas em uma única iteração. 
+Nesse caso, o tempo dos 3 programas na primeira iteração é maior que o tempo das demais iterações, não sei porque
+
+Os tempos usados para o benchmark foram obtidos através da execução do "primes2.sh"
