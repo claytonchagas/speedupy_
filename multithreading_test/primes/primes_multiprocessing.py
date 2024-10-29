@@ -70,13 +70,17 @@ if __name__ == "__main__":
     res = shared_dict["primes"] + 1
 
         
-    logging.info(f"GIL enabled: {sys._is_gil_enabled()}")
+    # logging.info(f"GIL enabled: {sys._is_gil_enabled()}")
+    py_version = sys.version.split(" ")[0]
+
+    logging.info(f"python version: {py_version}")
     logging.info(f"num_procs: {num_procs}")
     logging.info(f"function: {count_primes_multiprocessing.__name__} / input = {n} / result = {res}")
     logging.info(f"time = {time_seconds} seconds")
     logging.info("#######################################")
 
-    print(f"GIL enabled: {sys._is_gil_enabled()}")
+    # print(f"GIL enabled: {sys._is_gil_enabled()}")
+    print(f"python version: {py_version}")
     print(f"num_procs: {num_procs}")
     print(f"function: {count_primes_multiprocessing.__name__} / input = {n} / result = {res}")
     print(f"time = {time_seconds} seconds")
