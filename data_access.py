@@ -189,6 +189,19 @@ def _get_cache_data_v027x(id):
     return result
 
 
+
+def _get_cache_data_v2dmp(id):
+    if (id in DATA_DICTIONARY):
+        return DATA_DICTIONARY[id]
+    
+    list_file_name = _get(_get_file_name(id))
+    result = _deserialize(id) if len(list_file_name) == 1 else None
+    if(result is not None):
+        DATA_DICTIONARY[id] = result
+        NEW_DATA_DICTIONARY[id] = result
+    return result
+
+
 # Aqui misturam as versões v0.2.1.x a v0.2.7.x e v01x
 def get_cache_data(fun_name, fun_args, fun_source, argsp_v):
     id = _get_id(fun_args, fun_source)
@@ -217,6 +230,9 @@ def get_cache_data(fun_name, fun_args, fun_source, argsp_v):
     elif(argsp_v == ['2d-lz'] or argsp_v == ['v027x']):
         ret_get_cache_data_v027x = _get_cache_data_v027x(id)
         return ret_get_cache_data_v027x
+    elif(argsp_v == ['2d-mp']):
+        return _get_cache_data_v2dmp(id)
+
 
 
 def add_new_data_to_CACHED_DATA_DICTIONARY(list_file_names):

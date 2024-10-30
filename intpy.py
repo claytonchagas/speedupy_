@@ -1,6 +1,9 @@
 import inspect
 import time
 import sys
+import multiprocessing
+import os
+import signal
 
 from functools import wraps
 
@@ -10,11 +13,11 @@ from logger.log import debug
 
 g_argsp_m, g_argsp_M, g_argsp_s, g_argsp_no_cache, g_argsp_hash = get_params()
 
-print(g_argsp_m)
+print(f"{g_argsp_m=}")
 
-print(g_argsp_no_cache)
+print(f"{g_argsp_no_cache=}")
 
-print(g_argsp_hash)
+print(f"{g_argsp_hash=}")
 
 if g_argsp_m == None and not g_argsp_no_cache:
     print("Error: enter the \"-h\" parameter on the command line after \"python script.py\" to see usage instructions")
@@ -54,6 +57,8 @@ else:
             return execution
         return decorator
 
+    def deterministic_multiprocessing(f, shared_dict, barrier):
+        return _function_call_multiprocessing(f, shared_dict, barrier)
 
     def deterministic(f):
         return _method_call(f) if _is_method(f) else _function_call(f)
@@ -121,6 +126,52 @@ else:
                 return c
 
         return wrapper
+    
+
+    def function_executer(shared_dict, barrier, proc_name, function, *args, **kwargs):
+        pid = os.getpid()
+        shared_dict["procs"] = shared_dict["procs"] + [pid]
+        
+        barrier.wait()
+        print(f"begin function {function.__name__} / pid = {pid}")
+        res = function(*args, **kwargs)
+        print(f"end function {function.__name__}")
+
+        print(f"{proc_name} terminou")
+
+        if (res != None and proc_name == "p2") or proc_name == "p1":
+            shared_dict["res"] = res
+            shared_dict["win_func"] = function.__name__
+
+            for p in shared_dict["procs"]:
+                if p != pid:
+                    os.kill(p, signal.SIGTERM)
+
+        return res
+
+
+
+    def _function_call_multiprocessing(f, shared_dict, barrier):
+
+        @wraps(f)
+        def wrapper(*method_args, **method_kwargs):
+
+            def get_cached_data_wrapper(*args):
+                return _get_cache(f, args)
+
+            p1 = multiprocessing.Process(target=function_executer, args=(shared_dict, barrier, "p1", f, method_args))
+            p2 = multiprocessing.Process(target=function_executer, args=(shared_dict, barrier, "p2", get_cached_data_wrapper, method_args))
+
+            p1.start()
+            p2.start()
+
+            p1.join()
+            p2.join()
+
+            print(shared_dict)
+
+        return wrapper
+
 
 
     # obs
