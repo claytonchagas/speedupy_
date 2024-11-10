@@ -4,3 +4,4 @@ fibonacci.py
 *.pyc
 ##*.ipcache
 .venv
+.vscode

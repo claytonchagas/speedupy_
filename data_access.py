@@ -8,12 +8,16 @@ import xxhash
 from parser_params import get_params
 from banco import Banco
 from logger.log import debug, warn
+from environment import init_env
 
 #from . import CONEXAO_BANCO
 
 # Opening database connection and creating select query to the database
 # to populate DATA_DICTIONARY
+
+init_env()
 g_argsp_m, g_argsp_M, g_argsp_s, g_argsp_no_cache, g_argsp_hash = get_params()
+
 CONEXAO_BANCO = None
 if(g_argsp_m != ['v01x']):
     CONEXAO_BANCO = Banco(os.path.join(".intpy", "intpy.db"))
@@ -194,12 +198,19 @@ def _get_cache_data_v2dmp(id):
     if (id in DATA_DICTIONARY):
         return DATA_DICTIONARY[id]
     
+    # list_file_name = _get(_get_file_name(id))
+    # result = _deserialize(id) if len(list_file_name) == 1 else None
+    # if(result is not None):
+    #     DATA_DICTIONARY[id] = result
+    # return result
+    return None
+
+
+def get_cache_data_v2dmp_storage(id):
     list_file_name = _get(_get_file_name(id))
-    result = _deserialize(id) if len(list_file_name) == 1 else None
-    if(result is not None):
-        DATA_DICTIONARY[id] = result
-        NEW_DATA_DICTIONARY[id] = result
-    return result
+    # print(f"{list_file_name=}")
+    return _deserialize(id) if len(list_file_name) == 1 else None
+
 
 
 # Aqui misturam as versões v0.2.1.x a v0.2.7.x e v01x
@@ -247,6 +258,11 @@ def add_new_data_to_CACHED_DATA_DICTIONARY(list_file_names):
                 DATA_DICTIONARY[file_name] = result
 
 
+def create_entry_main_memory_cache(fun_args, fun_return, fun_source):
+    id = _get_id(fun_args, fun_source)
+    DATA_DICTIONARY[id] = fun_return
+
+
 # Aqui misturam as versões v0.2.1.x a v0.2.7.x e v01x
 def create_entry(fun_name, fun_args, fun_return, fun_source, argsp_v):
     id = _get_id(fun_args, fun_source)
@@ -270,6 +286,22 @@ def create_entry(fun_name, fun_args, fun_return, fun_source, argsp_v):
     elif(argsp_v == ['2d-ad-f'] or argsp_v == ['v025x'] or
         argsp_v == ['2d-ad-ft'] or argsp_v == ['v026x']):
         NEW_DATA_DICTIONARY[id] = (fun_return, fun_name)
+
+
+def create_entry_v2(fun_name, fun_args, fun_return, fun_source, argsp_v):
+    id = _get_id(fun_args, fun_source)
+    db = Banco(os.path.join(".intpy", "intpy.db"))
+    _serialize(fun_return, id)
+    db.executarComandoSQLSemRetorno(f"INSERT OR IGNORE INTO CACHE(cache_file) VALUES ({_get_file_name(id)})")
+    db.salvarAlteracoes()
+    db.fecharConexao()
+
+
+def salvarNovosDadosBancoV2DMP():
+    for id in DATA_DICTIONARY:
+        _serialize(DATA_DICTIONARY[id], id)
+        _save(_get_file_name(id))
+
 
 
 # Aqui misturam as versões v0.2.1.x a v0.2.7.x
@@ -301,7 +333,7 @@ def salvarNovosDadosBanco(argsp_v):
 
     CONEXAO_BANCO.salvarAlteracoes()
     CONEXAO_BANCO.fecharConexao()
-
+   
 
 if(g_argsp_m == ['1d-ad'] or g_argsp_m == ['v022x']
     or g_argsp_m == ['2d-ad'] or g_argsp_m == ['v023x']):

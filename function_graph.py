@@ -368,7 +368,7 @@ class ExperimentFunctionGraphCreator(ast.NodeVisitor):
         script = self.__experiment.scripts[script_name]
 
         user_defined_imported_scripts = script.get_user_defined_imported_scripts(self.__experiment.experiment_base_dir)
-        print(f"{user_defined_imported_scripts}")
+        # print(f"{user_defined_imported_scripts}")
         
         self.__create_user_defined_imported_scripts_function_graphs(user_defined_imported_scripts)
 
@@ -494,7 +494,7 @@ class ExperimentFunctionGraphCreator(ast.NodeVisitor):
                 while(isinstance(current_node, ast.Attribute)):
                     function_called_name_parts.append(current_node.attr)
                     current_node = current_node.value
-                    print(current_node.__dict__)
+                    # print(current_node.__dict__)
                 function_called_name_parts.append(current_node.id)
 
                 function_called_name_parts.reverse()

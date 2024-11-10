@@ -1,23 +1,27 @@
 import inspect
 import time
 import sys
-import multiprocessing
 import os
 import signal
+import logging
 
 from functools import wraps
 
 from parser_params import get_params
 from environment import init_env
 from logger.log import debug
+from data_access import get_cache_data, create_entry, salvarNovosDadosBanco, create_entry_main_memory_cache, _get_id, get_cache_data_v2dmp_storage, salvarNovosDadosBancoV2DMP
+from function_graph import create_experiment_function_graph, get_source_code_executed
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(filename="logs.txt", level=logging.DEBUG)
+
 
 g_argsp_m, g_argsp_M, g_argsp_s, g_argsp_no_cache, g_argsp_hash = get_params()
+# print(f"{g_argsp_m=}")
+# print(f"{g_argsp_no_cache=}")
+# print(f"{g_argsp_hash=}")
 
-print(f"{g_argsp_m=}")
-
-print(f"{g_argsp_no_cache=}")
-
-print(f"{g_argsp_hash=}")
 
 if g_argsp_m == None and not g_argsp_no_cache:
     print("Error: enter the \"-h\" parameter on the command line after \"python script.py\" to see usage instructions")
@@ -37,15 +41,19 @@ if g_argsp_no_cache:
     def deterministic(f):
         return f
 else:
-    init_env()
+    # init_env()
     from data_access import get_cache_data, create_entry, salvarNovosDadosBanco
     from function_graph import create_experiment_function_graph, get_source_code_executed
 
     g_user_script_graph = None
 
     def _initialize_cache(user_script_path):
+        # print("init graph")
         global g_user_script_graph
-        g_user_script_graph = create_experiment_function_graph(user_script_path)
+        res = create_experiment_function_graph(user_script_path)
+        g_user_script_graph = res
+        return res
+
 
     def initialize_intpy(user_script_path):
         def decorator(f):
@@ -57,8 +65,11 @@ else:
             return execution
         return decorator
 
-    def deterministic_multiprocessing(f, shared_dict, barrier):
-        return _function_call_multiprocessing(f, shared_dict, barrier)
+    def deterministic_v2(g_user_script_graph):
+        def decorator(f):
+            return _function_call_no_cache_lookup(f, g_user_script_graph)
+        return decorator
+    
 
     def deterministic(f):
         return _method_call(f) if _is_method(f) else _function_call(f)
@@ -69,15 +80,44 @@ else:
         return get_cache_data(func.__name__, args, fun_source, g_argsp_m)
 
 
+    def _get_cache_v2(func, args, g_user_script_graph, g_argsp_m):
+        fun_source = get_source_code_executed(func, g_user_script_graph)
+        return get_cache_data(func.__name__, args, fun_source, g_argsp_m)
+    
+
+    def get_cache_2d_mp_storage(func, args, g_user_script_graph):
+        # print(f"{g_user_script_graph=}")
+        # print(f"g_user_script_graph == None : {g_user_script_graph==None}")
+        # print(f"(READ) g_user_script_graph : {g_user_script_graph.__hash__}")
+        logger.debug(f"[CACHE_PROC] func = {func.__name__} / args: {args}")
+        fun_source = get_source_code_executed(func, g_user_script_graph)
+        id = _get_id(args, fun_source)
+        # print(f"cache id: {id}")
+        return get_cache_data_v2dmp_storage(id)
+
+
+
     def _cache_exists(cache):
         return cache is not None
 
 
     def _cache_data(func, fun_args, fun_return, elapsed_time):
         debug("starting caching data for {0}({1})".format(func.__name__, fun_args))
+        # print(f"[_cache_data] : {g_user_script_graph}")
         start = time.perf_counter()
         fun_source = get_source_code_executed(func, g_user_script_graph)
         create_entry(func.__name__, fun_args, fun_return, fun_source, g_argsp_m)
+        end = time.perf_counter()
+        debug("caching {0} took {1}".format(func.__name__, end - start))
+
+    def _cache_data_v2(func, fun_args, fun_return, g_user_script_graph):
+        # print(f"g_user_script_graph == None : {g_user_script_graph==None}")
+        # print(f"(SALVAR) g_user_script_graph : {g_user_script_graph.__hash__}")
+        debug("starting caching data for {0}({1})".format(func.__name__, fun_args))
+        start = time.perf_counter()
+        logger.debug(f"[EXECUTION PROC] function: {func.__name__} / args: {fun_args}")
+        fun_source = get_source_code_executed(func, g_user_script_graph)
+        create_entry_main_memory_cache(fun_args, fun_return, fun_source)
         end = time.perf_counter()
         debug("caching {0} took {1}".format(func.__name__, end - start))
 
@@ -126,7 +166,44 @@ else:
                 return c
 
         return wrapper
+
+
+    def _function_call_v2(f, g_user_script_graph):
+        """
+        executa a funcao e guarda dados no cache
+
+        usa dados da cache local
+        """
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            cached_res = _get_cache_v2(f, args, g_user_script_graph, ['2d-mp'])
+            result = None
+
+            if cached_res == None:
+                print(f"cache miss: function {f.__name__} / args: {args}")
+                result, _ = _execute_func(f, *args, **kwargs)
+                _cache_data_v2(f, args, result, g_user_script_graph)
+            else:
+                print(f"cache hit: function {f.__name__} / args: {args}")
+                result = cached_res
+            
+            return result
+
+        return wrapper
     
+
+    def _function_call_no_cache_lookup(f, g_user_script_graph):
+        """
+        executa a funcao, sem guardar consultar dados no cache, mas salva os resultados em um cache que serão posteriorment salvos em banco
+        """
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            result, _ = _execute_func(f, *args, **kwargs)
+            _cache_data_v2(f, *args, result, g_user_script_graph)
+            return result
+
+        return wrapper
+
 
     def function_executer(shared_dict, barrier, proc_name, function, *args, **kwargs):
         pid = os.getpid()
@@ -149,35 +226,18 @@ else:
 
         return res
 
-
-
-    def _function_call_multiprocessing(f, shared_dict, barrier):
-
-        @wraps(f)
-        def wrapper(*method_args, **method_kwargs):
-
-            def get_cached_data_wrapper(*args):
-                return _get_cache(f, args)
-
-            p1 = multiprocessing.Process(target=function_executer, args=(shared_dict, barrier, "p1", f, method_args))
-            p2 = multiprocessing.Process(target=function_executer, args=(shared_dict, barrier, "p2", get_cached_data_wrapper, method_args))
-
-            p1.start()
-            p2.start()
-
-            p1.join()
-            p2.join()
-
-            print(shared_dict)
-
-        return wrapper
-
-
-
     # obs
     def _is_method(f):
         args = inspect.getfullargspec(f).args
         return bool(args and args[0] == 'self')
+
+
+    def executeFunctionAndSave(function, *args):
+        res = function(*args)
+        # TODO: ver quais sao os dados novos que devam ser salvos
+        salvarNovosDadosBancoV2DMP()
+        return res
+
 
 
     def _salvarCache():
