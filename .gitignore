@@ -5,3 +5,4 @@ fibonacci.py
 ##*.ipcache
 .venv
 .vscode
+logs.txt

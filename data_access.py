@@ -4,11 +4,13 @@ import os
 import threading
 import mmh3
 import xxhash
+import sqlite3
 
 from parser_params import get_params
 from banco import Banco
 from logger.log import debug, warn
 from environment import init_env
+
 
 #from . import CONEXAO_BANCO
 
@@ -208,7 +210,7 @@ def _get_cache_data_v2dmp(id):
 
 def get_cache_data_v2dmp_storage(id):
     list_file_name = _get(_get_file_name(id))
-    # print(f"{list_file_name=}")
+    print(f"{list_file_name=}")
     return _deserialize(id) if len(list_file_name) == 1 else None
 
 
@@ -298,9 +300,15 @@ def create_entry_v2(fun_name, fun_args, fun_return, fun_source, argsp_v):
 
 
 def salvarNovosDadosBancoV2DMP():
+    # print(f"{DATA_DICTIONARY=}")
     for id in DATA_DICTIONARY:
         _serialize(DATA_DICTIONARY[id], id)
-        _save(_get_file_name(id))
+        file_name = _get_file_name(id)
+        # _save(_get_file_name(id))
+        bd = sqlite3.connect(".intpy/intpy.db")
+        bd.execute("INSERT OR IGNORE INTO CACHE(cache_file) VALUES (?)", (file_name,))
+        bd.commit()
+        bd.close()
 
 
 
