@@ -3,4 +3,6 @@ fibonacci.py
 ./logger/__pycache__
 *.pyc
 ##*.ipcache
-
+.venv
+logs.txt
+.vscode

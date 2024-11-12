@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# rodar benchmark de contagem de numero primos com python 3.12 e com GIL ligado
+# benchmark de contagem de numero primos com python 3.12 e com GIL ligado
 
 n=10000000
 num_threads=4
