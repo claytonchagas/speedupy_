@@ -12,7 +12,7 @@ EXECUTION_PROC = "execution_proc"
 CACHE_PROC = "cache_proc"
 
 class Speedupy:
-    def __init__(self, user_script_path, shared_dict, barrier) -> None:
+    def __init__(self, g_user_script_graph, shared_dict, barrier) -> None:
 
         self.g_argsp_m = None
         self.g_argsp_M = None
@@ -21,7 +21,7 @@ class Speedupy:
         self.g_argsp_hash = None
     
         self.init_params()
-        self.g_user_script_graph = _initialize_cache(user_script_path)
+        self.g_user_script_graph = g_user_script_graph
 
         self.dataAccess = DataAccess()
         self.shared_dict = shared_dict
@@ -82,7 +82,7 @@ class Speedupy:
         print(f"{exec_proc_args=}")
         p1 = multiprocessing.Process(target=self.function_executer, args=(self.shared_dict, self.barrier, EXECUTION_PROC, executeFunctionAndSave, *exec_proc_args))
 
-        cache_function_args = (function, *args, self.g_user_script_graph)
+        cache_function_args = (function, args, self.g_user_script_graph)
         # print(f"{cache_function_args=}")
         p2 = multiprocessing.Process(target=self.function_executer, args=(self.shared_dict, self.barrier, CACHE_PROC, get_cache_2d_mp_storage, *cache_function_args))
 

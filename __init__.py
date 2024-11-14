@@ -1,8 +1,8 @@
 #import os
 #from .banco import Banco
-from intpy import _initialize_cache
+# from intpy import _initialize_cache
 
-graph = _initialize_cache()
+# graph = _initialize_cache()
 
 #from .environment import init_env
 

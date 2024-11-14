@@ -6,3 +6,5 @@ fibonacci.py
 .venv
 .vscode
 logs.txt
+.intpy
+TODO.txt

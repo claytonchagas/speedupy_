@@ -22,6 +22,10 @@ g_argsp_m, g_argsp_M, g_argsp_s, g_argsp_no_cache, g_argsp_hash = get_params()
 # print(f"{g_argsp_no_cache=}")
 # print(f"{g_argsp_hash=}")
 
+g_user_script_graph = None
+
+def get_g_user_script_graph():
+    return g_user_script_graph
 
 if g_argsp_m == None and not g_argsp_no_cache:
     print("Error: enter the \"-h\" parameter on the command line after \"python script.py\" to see usage instructions")
@@ -45,8 +49,6 @@ else:
     from data_access import get_cache_data, create_entry, salvarNovosDadosBanco
     from function_graph import create_experiment_function_graph, get_source_code_executed
 
-    g_user_script_graph = None
-
     def _initialize_cache(user_script_path):
         # print("init graph")
         global g_user_script_graph
@@ -64,6 +66,13 @@ else:
                     _salvarCache()
             return execution
         return decorator
+
+
+    def deterministic_v3(g_user_script_graph):
+        def decorator(f):
+            return _function_call_with_cache_lookup(f, g_user_script_graph)
+        return decorator
+
 
     def deterministic_v2(g_user_script_graph):
         def decorator(f):
@@ -89,10 +98,10 @@ else:
         # print(f"{g_user_script_graph=}")
         # print(f"g_user_script_graph == None : {g_user_script_graph==None}")
         # print(f"(READ) g_user_script_graph : {g_user_script_graph.__hash__}")
-        logger.debug(f"[CACHE_PROC] func = {func.__name__} / args: {args}")
+        # logger.debug(f"[CACHE_PROC] func = {func.__name__} / args: {args}")
         fun_source = get_source_code_executed(func, g_user_script_graph)
         id = _get_id(args, fun_source)
-        # print(f"cache id: {id}")
+        # logger.debug(f"[CACHE_PROC] cache id: {id} / func = {func.__name__} / args = {args}")
         return get_cache_data_v2dmp_storage(id)
 
 
@@ -115,7 +124,7 @@ else:
         # print(f"(SALVAR) g_user_script_graph : {g_user_script_graph.__hash__}")
         debug("starting caching data for {0}({1})".format(func.__name__, fun_args))
         start = time.perf_counter()
-        logger.debug(f"[EXECUTION PROC] function: {func.__name__} / args: {fun_args}")
+        # logger.debug(f"[EXECUTION PROC] function: {func.__name__} / args: {fun_args}")
         fun_source = get_source_code_executed(func, g_user_script_graph)
         create_entry_main_memory_cache(fun_args, fun_return, fun_source)
         end = time.perf_counter()
@@ -168,11 +177,9 @@ else:
         return wrapper
 
 
-    def _function_call_v2(f, g_user_script_graph):
+    def _function_call_with_cache_lookup(f, g_user_script_graph):
         """
-        executa a funcao e guarda dados no cache
-
-        usa dados da cache local
+        dada uma funcao e argumentos, confere se existe resultado em cache. Se existir, retorna o resultado. Caso contrario executa a função
         """
         @wraps(f)
         def wrapper(*args, **kwargs):
@@ -180,11 +187,11 @@ else:
             result = None
 
             if cached_res == None:
-                print(f"cache miss: function {f.__name__} / args: {args}")
+                logger.debug(f"[EXECUTION_PROC] cache miss: function {f.__name__} / args: {args}")
                 result, _ = _execute_func(f, *args, **kwargs)
                 _cache_data_v2(f, args, result, g_user_script_graph)
             else:
-                print(f"cache hit: function {f.__name__} / args: {args}")
+                logger.debug(f"[EXECUTION_PROC] cache hit: function {f.__name__} / args: {args}")
                 result = cached_res
             
             return result
@@ -194,12 +201,12 @@ else:
 
     def _function_call_no_cache_lookup(f, g_user_script_graph):
         """
-        executa a funcao, sem guardar consultar dados no cache, mas salva os resultados em um cache que serão posteriorment salvos em banco
+        executa a funcao, sem consultar dados no cache, mas salva os resultados em um cache que serão posteriorment salvos em banco
         """
         @wraps(f)
         def wrapper(*args, **kwargs):
             result, _ = _execute_func(f, *args, **kwargs)
-            _cache_data_v2(f, *args, result, g_user_script_graph)
+            _cache_data_v2(f, args, result, g_user_script_graph)
             return result
 
         return wrapper
@@ -235,6 +242,7 @@ else:
     def executeFunctionAndSave(function, *args):
         res = function(*args)
         # TODO: ver quais sao os dados novos que devam ser salvos
+        # atualmente salva dados repetidos
         salvarNovosDadosBancoV2DMP()
         return res
 
