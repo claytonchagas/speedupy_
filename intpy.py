@@ -4,11 +4,12 @@ import sys
 import os
 import signal
 import logging
+import multiprocessing
 
 from functools import wraps
 
 from parser_params import get_params
-from environment import init_env
+from environment import get_inter_cache_value
 from logger.log import debug
 from data_access import get_cache_data, create_entry, salvarNovosDadosBanco, create_entry_main_memory_cache, _get_id, get_cache_data_v2dmp_storage, salvarNovosDadosBancoV2DMP
 from function_graph import create_experiment_function_graph, get_source_code_executed
@@ -16,13 +17,27 @@ from function_graph import create_experiment_function_graph, get_source_code_exe
 logger = logging.getLogger(__name__)
 logging.basicConfig(filename="logs.txt", level=logging.DEBUG)
 
+g_user_script_graph = None
+EXECUTION_PROC = "execution_proc"
+CACHE_PROC = "cache_proc"
 
 g_argsp_m, g_argsp_M, g_argsp_s, g_argsp_no_cache, g_argsp_hash = get_params()
 # print(f"{g_argsp_m=}")
 # print(f"{g_argsp_no_cache=}")
 # print(f"{g_argsp_hash=}")
 
-g_user_script_graph = None
+
+def get_execution_params():
+    
+    v1 = g_argsp_m if type(g_argsp_m) != list else g_argsp_m[0]
+    v2 = g_argsp_M if type(g_argsp_M) != list else g_argsp_M[0]
+    v3 = g_argsp_s if type(g_argsp_s) != list else g_argsp_s[0]
+    v4 = g_argsp_no_cache if type(g_argsp_no_cache) != list else g_argsp_no_cache[0]
+    v5 = g_argsp_hash if type(g_argsp_hash) != list else g_argsp_hash[0]
+    v6 = True # intra_cache
+    v7 = get_inter_cache_value() # inter_cache
+
+    return v1, v2, v3, v4, v5, v6, v7
 
 def get_g_user_script_graph():
     return g_user_script_graph
@@ -187,11 +202,11 @@ else:
             result = None
 
             if cached_res == None:
-                logger.debug(f"[EXECUTION_PROC] cache miss: function {f.__name__} / args: {args}")
+                # logger.debug(f"[EXECUTION_PROC] cache miss: function {f.__name__} / args: {args}")
                 result, _ = _execute_func(f, *args, **kwargs)
                 _cache_data_v2(f, args, result, g_user_script_graph)
             else:
-                logger.debug(f"[EXECUTION_PROC] cache hit: function {f.__name__} / args: {args}")
+                # logger.debug(f"[EXECUTION_PROC] cache hit: function {f.__name__} / args: {args}")
                 result = cached_res
             
             return result
@@ -241,8 +256,6 @@ else:
 
     def executeFunctionAndSave(function, *args):
         res = function(*args)
-        # TODO: ver quais sao os dados novos que devam ser salvos
-        # atualmente salva dados repetidos
         salvarNovosDadosBancoV2DMP()
         return res
 
@@ -250,3 +263,58 @@ else:
 
     def _salvarCache():
         salvarNovosDadosBanco(g_argsp_m)
+
+
+
+    def function_executer(shared_dict, barrier, proc_name, function, *args, **kwargs):
+        pid = os.getpid()
+        shared_dict["procs"] = shared_dict["procs"] + [pid]
+        
+        barrier.wait()
+        # print(f"begin function {function.__name__} / pid = {pid}\n")
+        res = function(*args, **kwargs)
+        # print(f"end function {function.__name__}\n")
+
+        # print(f"{proc_name} terminou\n")
+
+        # if proc_name == "p1":
+        #     print("execucao normal terminou\n")
+        # else:
+        #     print("busca em cache terminou\n")
+
+        if (res == None and proc_name == CACHE_PROC):
+            # print("cache_lookup_proc terminou - nenhum resultado em cache")
+            shared_dict["procs"] = list(filter(lambda x : x != pid, shared_dict["procs"]))
+
+        if (res != None and proc_name == CACHE_PROC) or proc_name == EXECUTION_PROC:
+            # print("achou res valido\n")
+            shared_dict["res"] = res
+            shared_dict["win_proc"] = proc_name
+
+            for p in shared_dict["procs"]:
+                if p != pid:
+                    os.kill(p, signal.SIGTERM)
+                    # print(f"matou proc {p}")
+
+        return res
+
+
+    def execute_experiment(shared_dict, barrier, function, *args):
+        
+        exec_proc_args = (function, *args)
+        # print(f"{exec_proc_args=}")
+        p1 = multiprocessing.Process(target=function_executer, args=(shared_dict, barrier, EXECUTION_PROC, executeFunctionAndSave, *exec_proc_args))
+
+        cache_function_args = (function, args, get_g_user_script_graph())
+        # print(f"{cache_function_args=}")
+        p2 = multiprocessing.Process(target=function_executer, args=(shared_dict, barrier, CACHE_PROC, get_cache_2d_mp_storage, *cache_function_args))
+
+        p1.start()
+        p2.start()
+
+        p1.join()
+        p2.join()
+
+        # print(f"{shared_dict=}")
+
+        return shared_dict

@@ -17,6 +17,7 @@ from environment import init_env
 # Opening database connection and creating select query to the database
 # to populate DATA_DICTIONARY
 
+# print(os.path.exists(".intpy"))
 init_env()
 g_argsp_m, g_argsp_M, g_argsp_s, g_argsp_no_cache, g_argsp_hash = get_params()
 
@@ -210,7 +211,7 @@ def _get_cache_data_v2dmp(id):
 
 def get_cache_data_v2dmp_storage(id):
     list_file_name = _get(_get_file_name(id))
-    print(f"{list_file_name=}")
+    # print(f"{list_file_name=}")
     return _deserialize(id) if len(list_file_name) == 1 else None
 
 

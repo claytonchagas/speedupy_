@@ -1,5 +1,6 @@
 import json
 import builtins as b
+import os
 
 builtin_types = [t for t in b.__dict__.values() if isinstance(t, type)]
 json_not_serializable_types = ["Import", "Module"]
@@ -54,3 +55,24 @@ def dump_to_json(dict_obj, filename):
         json.dump(serialized_obj, f, indent=4)
 
 
+
+def create_csv_file_if_not_exists(filename, columns: list[str]):
+    if os.path.exists(filename) is False:
+        with open(filename, "w") as f:
+            columns_str = iterable_to_csv_row(columns)
+            f.write(columns_str)
+
+
+def add_row_to_dataFrame(df, row):
+    i = df.shape[0]
+    df.loc[i, :] = row
+
+
+def iterable_to_csv_row(iterable):
+    row = ""
+    for i in iterable:
+        row += str(i) + ","
+    
+    row = row.rstrip(",")
+    row += "\n"
+    return row

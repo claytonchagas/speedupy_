@@ -7,6 +7,7 @@ from logger.log import debug
 FOLDER_NAME = ".intpy"
 CACHE_FOLDER_NAME = FOLDER_NAME + "/cache"
 HIDDEN = 0x02
+inter_cache = False
 
 
 def _create_cache_folder():
@@ -29,15 +30,24 @@ def _create_folder():
 
 
 def init_env():
+    global inter_cache
+    if _folder_exists() is True:
+        inter_cache = True
+    
     debug("cheking if intpy environment exists")
     if _env_exists():
         debug("environment already exists")
         return
+    
 
     debug("creating intpy environment")
     _create_folder()
     _create_cache_folder()
     _create_database()
+
+
+def get_inter_cache_value():
+    return inter_cache
 
 
 def _create_database():
