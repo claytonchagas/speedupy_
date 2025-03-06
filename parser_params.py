@@ -94,6 +94,11 @@ def get_params():
                                   action="store_true",
                                   help='SpeedUpy\'s disable cache')
 
+    intpy_arg_parser.add_argument('--mp',
+                                  default=False,
+                                  action="store_true",
+                                  help='SpeedUpy\'s multiprocessing mode')
+
     intpy_arg_parser.add_argument('-M',
                                   '--marshalling',
                                    choices=marshals,
@@ -112,7 +117,7 @@ def get_params():
 
     
     args = intpy_arg_parser.parse_args()
-
+    
     
     if args.glossary:
         print(glossary_msg())
@@ -127,7 +132,8 @@ def get_params():
     argsp_no_cache = args.no_cache
 
     argsp_hash = args.hash
-
+    
+    argsp_mp = args.mp
 
     if str(argsp_m[0]) == 'help' or str(argsp_M[0]) == 'help' or str(argsp_hash[0]) == 'help' or str(argsp_s[0]) == 'help':
         if str(argsp_m[0]) == 'help':
@@ -142,8 +148,8 @@ def get_params():
         if str(argsp_s[0]) == 'help':
             print(storage_msg())
         sys.exit()
-
-    return argsp_m, argsp_M, argsp_s, argsp_no_cache, argsp_hash
+            
+    return argsp_m, argsp_M, argsp_s, argsp_no_cache, argsp_hash, argsp_mp
 
 
 """
